@@ -1,0 +1,9 @@
+* Purpose 
+  There are two main purposes
+  1. to learn the clim protocol
+  2. to create a GUI for :matrix-query
+* Usage
+  Currently this project is mostly worthless, as it doesnt implement any actual functionality. one can enter the app with
+  #+begin common-lisp
+  (matrix-clim-client:app-main)
+  #+end 
