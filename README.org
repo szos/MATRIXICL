@@ -5,7 +5,7 @@
 * Usage
   Currently this project is mostly worthless, as it doesnt implement any actual functionality. one can enter the app with
   #+begin common-lisp
-  ```
+  ``
   (matrix-clim-client:app-main)
-  ```
+  ``
   #+end 
