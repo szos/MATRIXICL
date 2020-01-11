@@ -2,6 +2,10 @@
 
 (in-package #:matrix-clim-client)
 
+(defmacro bold ((stream) &body body)
+  `(with-text-face (,stream :bold)
+     ,@body))
+
 (define-application-frame matrixicl ()
   ()
   ;; (:pointer-documentation t)
@@ -53,22 +57,18 @@
 (define-matrixicl-command (com-exit :name t) ()
   (frame-exit *application-frame*))
 
-(defmacro bold ((stream) &body body)
-  `(with-text-face (,stream :bold)
-     ,@body))
-
 ;; (define-matrixicl-command (com-write-string :name t) ()
 ;;   (write-string "test string" ))
 
-(defmethod display-room-list-text ((frame matrixicl) stream)
-  (with-end-of-line-action (stream :wrap*)
-    (let ((rooms (matrix-query::joined-rooms))
-    	  (y 15))
-      (loop for room in rooms
-    	 for i from 1
-    	 do (format stream "~a (~a)" (matrix-query::name room)
-		    (matrix-query::room-id room))))
-    (format stream "here is a text test for wrapping hihihihi how are you?!!!!?")))
+;; (defmethod display-room-list-text ((frame matrixicl) stream)
+;;   (with-end-of-line-action (stream :wrap*)
+;;     (let ((rooms (matrix-query::joined-rooms))
+;;     	  (y 15))
+;;       (loop for room in rooms
+;;     	 for i from 1
+;;     	 do (format stream "placeholder name (~a)" ;; (matrix-query::name room)
+;; 		    (matrix-query::room-id room))))
+;;     (format stream "here is a text test for wrapping hihihihi how are you?!!!!?")))
 
 (define-presentation-type pres-tester ())
 
@@ -76,6 +76,15 @@
     (pres-tester com-quit matrixicl :gesture :select)
     (obj)
   (com-exit))
+
+;; (defmethod display-room-list-text ((frame matrixicl) pane)
+;;   (with-output-as-presentation)
+;;   (let ((rooms (matrix-query::joined-rooms))
+;; 	(y 15))
+;;     (loop for room in rooms
+;;        for i from 1
+;;        do (format stream "placeholder name (~a)" ;; (matrix-query::name room)
+;; 		  (matrix-query::room-id room)))))
 
 (defmethod display-room-list-text ((frame matrixicl) pane)
   (slim:with-table (pane)
