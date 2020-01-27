@@ -10,4 +10,6 @@
 	       #:matrix-query
 	       #:slim)
   :components ((:file "package")
-               (:file "matrix-clim-client")))
+               (:file "matrix-clim-client")
+	       (:file "commands")
+	       (:file "presentations")))

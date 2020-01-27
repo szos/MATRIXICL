@@ -17,7 +17,7 @@
 	      ;; :scroll-bars t
 	      )
    (room :application
-	 ;; :display-function #'display-chat
+	 :display-function #'display-chat
 	 :display-time :command-loop
 	 ;; :scroll-bars t
 	 )
@@ -31,31 +31,6 @@
 
 (defun app-main ()
   (run-frame-top-level (make-application-frame 'matrixicl)))
-
-(make-command-table 'matrixicl-menubar
-		    :errorp nil
-		    :menu '(("App" :menu matrixicl-application-menu)
-			    ("User" :menu matrixicl-user-menu)
-			    ("Rooms" :menu matrixicl-room-menu)))
-
-(make-command-table 'matrixicl-application-menu
-		    :errorp nil
-		    :menu '(("Quit" :command com-quit)))
-
-(make-command-table 'matrixicl-room-menu
-		    :errorp nil
-		    :menu '(("New" :command com-new-room)))
-
-(make-command-table 'matrixicl-user-menu
-		    :errorp nil
-		    :menu '(("Login" :command com-login)
-			    ("Logout" :command com-logout)))
-
-(define-matrixicl-command (com-quit :name t) ()
-  (frame-exit *application-frame*))
-
-(define-matrixicl-command (com-exit :name t) ()
-  (frame-exit *application-frame*))
 
 ;; (define-matrixicl-command (com-write-string :name t) ()
 ;;   (write-string "test string" ))
@@ -73,9 +48,54 @@
 (define-presentation-type pres-tester ())
 
 (define-presentation-to-command-translator invoke-test-pres
-    (pres-tester com-quit matrixicl :gesture :select)
+    (pres-tester com-select-room matrixicl :gesture :select)
     (obj)
-  (com-exit))
+  ;;(com-exit)
+  ;;(setf *temp-display-chat-text* obj)
+  (list obj))
+
+
+;; command to select a room: 
+;; (define-matrixicl-command (com-select-room :name t)
+;;     ((room 'matrix-query::matrix-room))
+;;   ())
+
+(define-matrixicl-command (com-select-room :name t)
+    ((room matrix-query::matrix-room :prompt "enter a string"))
+  (setf *temp-display-chat-text* room))
+
+(define-presentation-type room-select-presentation-type ())
+
+(define-presentation-to-command-translator invoke-room-select
+    (room-select-presentation-type ;; com-select-room
+     com-exit
+     matrixicl :gesture :select)
+    (obj)
+  ;; (com-select-room ;;obj
+  ;; 		   )
+  ;;(com-exit)
+  )
+
+(define-presentation-to-command-translator invoke-room-select
+    (pres-tester com-select-room matrixicl :gesture :select)
+    (obj)
+  ;;(com-exit)
+  ;;(setf *temp-display-chat-text* obj)
+  (list obj))
+
+(defparameter *temp-event-info* nil)
+
+(define-matrixicl-command (com-select-event  :name t)
+    ((event matrix-query::text-message-event))
+  (setf *temp-display-chat-text* event))
+
+(define-presentation-type event-setter ())
+
+(define-presentation-to-command-translator invoke-event-setter
+    (pres-tester com-select-event matrixicl :gesture :select)
+    (obj)
+  (list obj))
+
 
 ;; (defmethod display-room-list-text ((frame matrixicl) pane)
 ;;   (with-output-as-presentation)
@@ -87,56 +107,82 @@
 ;; 		  (matrix-query::room-id room)))))
 
 (defmethod display-room-list-text ((frame matrixicl) pane)
-  (slim:with-table (pane)
-    (slim:row (slim:cell (bold (pane) (princ "desc: ")))
-	      (slim:cell (princ "hihi"))))
+  ;; (with-output-as-presentation (pane "room-something" 'pres-tester :single-box t)
+  ;;   (slim:with-table (pane)
+  ;;     (slim:row (slim:cell (bold (pane) (princ "desc: ")))
+  ;; 		(slim:cell (princ "hihi")))))
+  (bold (pane) (princ "Select a Room"))
   (fresh-line)
   (slim:with-table (pane :x-spacing 10)
-    (with-output-as-presentation (pane "testytest" 'pres-tester :single-box t)
-      ;; (slim:row
-      ;; 	(bold (pane)
-      ;; 	  (slim:cell (format pane "n")))
-      ;; 	(slim:cell
-      ;; 	  (clim:with-drawing-options (pane :ink clim:+dark-violet+)
-      ;; 	    (princ "restart name r")))
-      ;; 	(slim:cell (princ "r ")))
-      (format pane "exit"))))
+    (with-end-of-line-action (pane :wrap*)
+      (loop for room in matrix-query::*rooms*
+	 do ;; (with-output-as-presentation (pane (matrix-query::room-id room) ))
+	 ;;(print (matrix-query::name room)))
+	 ;; (format pane "~a~%  ~a" (matrix-query::name room) (matrix-query::topic room))
+	   (with-output-as-presentation (pane ;; (matrix-query::room-id room)
+					 room
+					 ;; 'invoke-room-select
+					 ;; 'matrix-query::matrix-room
+					 'pres-tester
+					 :single-box t)
+	     (slim:with-table (pane)
+	       (slim:row (slim:cell (bold (pane) (princ "room: ")))
+			 (slim:cell (princ (matrix-query::name room))))
+	       (slim:row (slim:cell (bold (pane) (princ "  Topic: ")))
+			 (slim:cell (princ (matrix-query::topic room)))))
+	     (fresh-line))))))
 
+(defparameter *temp-display-chat-text* "hoho2")
 
+(defmethod display-chat ((frame matrixicl) pane)
+  (cond ((equal (type-of *temp-display-chat-text*) 'matrix-query::matrix-room)
+	 (slim:with-table (pane :x-spacing 10)
+	   (with-end-of-line-action (pane :wrap*)
+	     (loop for event in (matrix-query::timeline *temp-display-chat-text*)
+		do (with-output-as-presentation (pane event 'pres-tester :single-box t)
+		     (slim:with-table (pane)
+		       (slim:row (slim:cell (bold (pane)
+					      (princ (matrix-query::sender event))
+					      (princ " Says:  "))
+					    ;; (princ (matrix-query::content event))
+					    (princ (matrix-query::generate-text event))
+					    ))
+		       ;;(slim:row (slim:cell (print (matrix-query::content event))))
+		       ))
+		;; (with-output-as-presentation (pane event 'exter :single-box t)
+		;; 	(slim:with-table (pane)
+		;; 	  (slim:row (slim:cell (bold (pane)
+		;; 				 (princ (matrix-query::sender event))
+		;; 				 (princ ": ")))
+		;; 		    (slim:cell (print (matrix-query::content event)))))
+		;; 	(fresh-line))
+		  ))))
+	;; ((equal (type-of *temp-display-chat-text*) 'matrix-query::event)
+	;;  (bold (pane) (princ (matrix-query::content *temp-display-chat-text*))))
+	(t
+	 (slim:with-table (pane :x-spacing 10)
+	   (slim:row (slim:cell (bold (pane) (princ "Here is the form of the selected event: "))))
+	   (slim:row (slim:cell (princ (matrix-query::content *temp-display-chat-text*))
+				;; (princ (inspect *temp-display-chat-text*))
+		       ))))))
 
-;; (defmethod display-chat ((frame matrixicl) pane)
-;;   (with-end-of-line-action (pane :wrap*)
-;;     (let ((room-timeline (matrix-query::timeline (matrix-query::current-room))))
-;;       (loop for event in room-timeline
-;; 	 do (format pane "~a" (matrix-query::generate-text event))))))
+;; (app-main)
 
-;; (draw-text* stream "Document:" 10 15)
-;; (draw-text* stream "Untitled" 10 30)
-;; (draw-text* stream "Untitled" 20 10000)
-;; (draw-text* stream "jk" 20 10010)
+;; (define-matrixicl-command (com-print-rooms :name "Print Rooms") ()
+;;   (matrix-query::update-joined-rooms))
 
-(define-matrixicl-command (com-print-rooms :name "Print Rooms") ()
-  (matrix-query::update-joined-rooms))
-
-(define-matrixicl-command (com-login :name t)
-    ()
-  (when matrix-query::*session-user-auth*
-    (com-login-helper)))
+;; (define-matrixicl-command (com-login :name t)
+;;     ()
+;;   (when matrix-query::*session-user-auth*
+;;     (com-login-helper)))
 
 (define-matrixicl-command (com-login-helper :name t)
     ((Username 'string) (Password 'string))
-  (matrix-query::login username password))
+  (matrix-query::login username password)
+  (matrix-query::initial-sync)
+  (matrix-query::setup-rooms-from-state))
 
 (define-matrixicl-command (com-logout :name t) ()
   (matrix-query::logout)
   "logged out")
-
-
-;; (define-matrixicl-command (com-draw-add-string :menu t :name "Add String")
-;;     ((string 'string) (x 'integer) (y 'integer))
-;;   (push (cons (make-point x y) string)
-;; 	(strings *application-frame*))
-;;   ;; (update-draw-pane)
-;;   )
-
 
