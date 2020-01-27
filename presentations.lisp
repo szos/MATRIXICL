@@ -7,6 +7,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-presentation-type access ())
+(define-presentation-type access-room ())
 
 ;;;;;;;;;;;;;;;;;;;;
 ;;;   Gestures   ;;;
@@ -21,7 +22,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-presentation-to-command-translator invoke-select-room
-    (access com-select-room matrixicl :gesture :select)
+    (access-room com-select-room matrixicl :gesture :select)
     (obj)
   (list obj))
 
