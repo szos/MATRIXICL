@@ -12,4 +12,5 @@
   :components ((:file "package")
                (:file "matrix-clim-client")
 	       (:file "commands")
-	       (:file "presentations")))
+	       (:file "presentations")
+	       ))
