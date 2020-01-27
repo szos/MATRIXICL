@@ -3,8 +3,14 @@
   1. to learn the clim protocol
   2. to create a GUI for :matrix-query
 * Usage
-  Currently this project is mostly worthless, as it doesnt implement any actual functionality. one can enter the app with
+  This app depends on another system im writing called matrix-query, which does the heavy lifting of talking to the matrix homeserver. Once both :matrix-query and :matrix-clim-client are in a place where quicklisp can find them, open up a repl and run
+
   #+begin_src common-lisp
+  (ql:quickload :matrix-clim-client)
   (matrix-clim-client:app-main)
   #+end_src
+
+  It is advisable to run this from emacs+slime, as the program is error prone at this point in time, and this will allow you to tackle errors much easier. 
+
+  Once the frame is opened, you can login via the interactor or the menubar. after logging in the program will populate with the rooms you have joined. It does not currently populate banned or invited rooms. you can click on a room to view it, and you can click on an event within the room to inspect it. 
 
