@@ -77,11 +77,6 @@
 ;;     ((room 'matrix-query::matrix-room))
 ;;   ())
 
-(define-matrixicl-command (com-select-room :name t)
-    ((room matrix-query::matrix-room :prompt "enter a string"))
-  ;; (setf *temp-display-chat-text* room)
-  (setf (main-display *application-frame*) room))
-
 (define-presentation-type room-select-presentation-type ())
 
 (define-presentation-to-command-translator invoke-room-select
@@ -103,18 +98,12 @@
 
 (defparameter *temp-event-info* nil)
 
-(define-matrixicl-command (com-select-event  :name t)
-    ((event matrix-query::text-message-event))
-  ;;(setf *temp-display-chat-text* event)
-  (setf (main-display *application-frame*) event))
-
 (define-presentation-type event-setter ())
 
 (define-presentation-to-command-translator invoke-event-setter
     (pres-tester com-select-event matrixicl :gesture :select)
     (obj)
   (list obj))
-
 
 ;; (defmethod display-room-list-text ((frame matrixicl) pane)
 ;;   (with-output-as-presentation)
@@ -143,38 +132,159 @@
 
 (defparameter *temp-display-chat-text* "hoho2")
 
-(defgeneric set-main-display (item frame pane))
+;;; (defgeneric make-event-text (event))
 
-(defmethod set-main-display ((item matrix-query::matrix-room) (frame matrixicl) pane)
+;;; (defmethod make-event-text ((event matrix-query::text-message-event)))
+
+(defgeneric print-event-text (event frame pane))
+
+(defmethod print-event-text ((event matrix-query::event) (frame matrixicl) pane)
+  (with-output-as-presentation (pane event 'access-event :single-box t)
+    (slim:with-table (pane)
+      (slim:row (slim:cell (bold (pane)
+			     (with-drawing-options (pane :ink clim:+dark-violet+)
+			       (princ (matrix-query::sender event)))
+			     (princ " says:  "))
+			   (princ (matrix-query::generate-text event)))))))
+
+(defmethod print-event-text ((event matrix-query::text-message-event)
+			     (frame matrixicl) pane)
+  (with-output-as-presentation (pane event 'access-event :single-box t)
+    (slim:with-table (pane)
+      (slim:row (slim:cell (bold (pane)
+			     (with-drawing-options (pane :ink clim:+dark-violet+)
+			       (princ (matrix-query::sender event)))
+			     (princ " says:  "))
+			   (princ (matrix-query::generate-text event)))))))
+
+(defmethod print-event-text ((event matrix-query::create-room-event)
+			     (frame matrixicl) pane)
+  (with-output-as-presentation (pane event 'access-event :single-box t)
+    (slim:with-table (pane)
+      (slim:row (slim:cell (bold (pane)
+			     (with-drawing-options (pane :ink clim:+dark-violet+)
+			       (princ (matrix-query::creator event)))
+			     (princ " created the room")))))))
+
+(defgeneric print-main-display (item frame pane))
+
+(defmethod print-main-display ((item matrix-query::matrix-room) (frame matrixicl) pane)
   (slim:with-table (pane :x-spacing 10)
     (with-end-of-line-action (pane :wrap*)
+      (slim:with-table (pane)
+	(slim:row (slim:cell (bold (pane)
+			       (with-drawing-options (pane :ink clim:+green4+)
+				 (with-output-as-presentation (pane
+							       item
+							       'update-with-prior-events
+							       :single-box t)
+				   (princ "Fetch 10"))
+				 (with-output-as-presentation (pane
+							       item
+							       'update-with-many-prior-events
+							       :single-box t)
+				   (princ " (or 30) "))
+				 (with-output-as-presentation (pane
+							       item
+							       'update-with-prior-events
+							       :single-box t)
+				   (princ "earlier messages")))))))
       (loop for event in (matrix-query::timeline item)
-	 do (with-output-as-presentation (pane event 'pres-tester :single-box t)
-	      (slim:with-table (pane)
-		(slim:row (slim:cell (bold (pane)
-				       (with-drawing-options (pane :ink clim:+dark-violet+)
-					 (princ (matrix-query::sender event)))
-				       (princ " says:  "))
-				     (princ (matrix-query::generate-text event))))))))))
+	 do ;; (with-output-as-presentation (pane event 'pres-tester :single-box t)
+	 ;;   (slim:with-table (pane)
+	    ;; 	(slim:row (slim:cell (bold (pane)
+	    ;; 			       (with-drawing-options (pane :ink clim:+dark-violet+)
+	    ;; 				 (princ (matrix-query::sender event)))
+	 ;; 			       (princ " says:  "))
+	 ;; 			     (princ (matrix-query::generate-text event))))))
+	   (print-event-text event frame pane)))))
 
-(defmethod set-main-display ((item matrix-query::text-message-event) (frame matrixicl) pane)
+(defmethod print-main-display ((item matrix-query::text-message-event) (frame matrixicl) pane)
   (slim:with-table (pane :x-spacing 10)
+    (with-output-as-presentation (pane (current-room *application-frame*)
+				       'room-return-presentation
+				       :single-box t)
+      (slim:row (slim:cell (bold (pane)
+			     (with-drawing-options (pane :ink clim:+green4+)
+			       (princ "RETURN TO ROOM"))))))
     (slim:row (slim:cell (bold (pane) (princ "Here is the content form of the selected event: "))))
     (slim:row (slim:cell (princ (matrix-query::content item))))
     (fresh-line)
     (slim:row (slim:cell (bold (pane) (princ "Here is the body data member of the event object"))))
     (slim:row (slim:cell (princ (matrix-query::body item))))))
 
-(defmethod set-main-display ((item matrix-query::event) (frame matrixicl) pane)
-  (slim:with-table (pane :x-spacing 10)
-    (slim:row (slim:cell (bold (pane) (princ "Here is the content form of the selected event: "))))
-    (slim:row (slim:cell (princ (matrix-query::content item))))))
+(defun get-slots (object)
+  ;; thanks to cl-prevalence
+  #+openmcl
+  (mapcar #'ccl:slot-definition-name
+      (#-openmcl-native-threads ccl:class-instance-slots
+       #+openmcl-native-threads ccl:class-slots
+       (class-of object)))
+  #+cmu
+  (mapcar #'pcl:slot-definition-name (pcl:class-slots (class-of object)))
+  #+sbcl
+  (mapcar #'sb-pcl:slot-definition-name (sb-pcl:class-slots (class-of object)))
+  #+lispworks
+  (mapcar #'hcl:slot-definition-name (hcl:class-slots (class-of object)))
+  #+allegro
+  (mapcar #'mop:slot-definition-name (mop:class-slots (class-of object)))
+  #+sbcl
+  (mapcar #'sb-mop:slot-definition-name (sb-mop:class-slots (class-of object)))
+  #+clisp
+  (mapcar #'clos:slot-definition-name (clos:class-slots (class-of object)))
+  #-(or openmcl cmu lispworks allegro sbcl clisp)
+  (error "not yet implemented"))
 
-(defmethod set-main-display ((item string) (frame matrixicl) pane)
+(defun print-object-slots (object stream)
+  (format stream "{ ~s ~s}" (type-of object)
+      (loop for i in (get-slots object)
+	 collect (cons i (handler-case (slot-value object i)
+			   (unbound-slot nil ;; "UNBOUND SLOT"
+			     ))))))
+
+(defun print-object-slots (object pane)
+  (slim:with-table (pane)
+    (slim:row (slim:cell (bold (pane)
+			   (princ "Event Type:  ")
+			   (with-drawing-options (pane :ink clim:+red+)
+			     (princ (type-of object))))))
+    (loop for i in (get-slots object)
+       do (slim:row (slim:cell (bold (pane)
+				 (with-drawing-options (pane :ink clim:+dark-violet+)
+				   (princ i))))
+		    (slim:cell (princ (handler-case (slot-value object i)
+					;;(unbound-slot (UNBOUND-SLOT))
+					(unbound-slot nil)
+					)))))))
+
+
+(defmethod print-main-display ((item matrix-query::event) (frame matrixicl) pane)
+  (with-end-of-line-action (pane :scroll*)
+    (slim:with-table (pane :x-spacing 10)
+      (with-output-as-presentation (pane (current-room *application-frame*)
+					 'room-return-presentation
+					 :single-box t)
+	(slim:row (slim:cell (bold (pane)
+			       (with-drawing-options (pane :ink clim:+green4+)
+				 (princ "RETURN TO ROOM"))))))
+      (slim:row (slim:cell (bold (pane)
+			     (format pane "~a, ~a" (matrix-query::event-type item)
+				     (type-of item)))))
+      (slim:row (slim:cell (bold (pane) (princ "Here is the content form of the selected event: "))))
+      (slim:row (slim:cell (princ (matrix-query::content item))))
+
+      (slim:row (slim:cell (bold (pane) (princ "here is the event"))))
+      ;;(slim:row (slim:cell (princ (inspect item))))
+      ;; (slim:row (slim:cell  ))
+      )
+    (fresh-line)
+    (print-object-slots item pane)))
+
+(defmethod print-main-display ((item string) (frame matrixicl) pane)
   (slim:with-table (pane :x-spacing 10)
     (slim:row (slim:cell (bold (pane) (princ item))))))
 
 (defmethod display-chat ((frame matrixicl) pane)
   (let ((item (main-display frame)))
-    (set-main-display item frame pane)))
+    (print-main-display item frame pane)))
 
