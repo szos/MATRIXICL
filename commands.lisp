@@ -9,7 +9,8 @@
 
 (make-command-table 'matrixicl-application-menu
 		    :errorp nil
-		    :menu '(("Quit" :command com-quit)))
+		    :menu '(("Manual Redisplay" :command com-manual-redisplay)
+			    ("Quit" :command com-quit)))
 
 (make-command-table 'matrixicl-room-menu
 		    :errorp nil
@@ -30,6 +31,9 @@
 (define-matrixicl-command (com-exit :name t) ()
   (frame-exit *application-frame*))
 
+(define-matrixicl-command (com-manual-redisplay :name t) ()
+  (redisplay-frame-panes *application-frame*))
+
 (define-matrixicl-command (com-temp-update-room :name t) ()
   (matrix-query::update-sync-threaded)
   (matrix-query::setup-rooms-from-state))
@@ -41,11 +45,12 @@
 
 (define-matrixicl-command (com-get-prior-events :name t)
     ((room matrix-query::matrix-room :prompt "enter a room id"))
-  
+  (setf (scroll-to-bottom *application-frame*) nil)
   (matrix-query::get-prior-events room))
 
 (define-matrixicl-command (com-get-many-prior-events :name t)
     ((room matrix-query::matrix-room :prompt "enter a room id"))
+  (setf (scroll-to-bottom *application-frame*) nil)
   (matrix-query::get-prior-events room 30))
 
 (defparameter *clim-command-thread-lock* (bt:make-lock))
