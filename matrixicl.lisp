@@ -1,15 +1,22 @@
 ;;;; matrix-clim-client.lisp
 
-(in-package #:matrix-clim-client)
+(in-package #:matrixicl)
 
 (defmacro bold ((stream) &body body)
   `(with-text-face (,stream :bold)
      ,@body))
 
+(defparameter *selected-file* nil)
+
+(defparameter *matrixicl-class-instance* nil)
+
 (define-application-frame matrixicl ()
   ((current-room :initform nil
 		 :initarg :current-room
 		 :accessor current-room)
+   (selected-file :initform nil
+		  :initarg :selected-file
+		  :accessor selected-file)
    (main-display :initform "Nothing selected to display"
 		 :initarg :main-display
 		 :accessor main-display
@@ -26,7 +33,7 @@
    (room-list :application
 	      :display-function #'display-room-list-text
               :display-time :command-loop
-	      :width 300
+	      :width 200
 	      ;; :width* 300
 	      ;; :scroll-bars t
 	      )
@@ -39,14 +46,13 @@
    		      ;; :display-function #'display-event-pane
    		      ;; :scroll-bars t
 		      )
-   (horiscrol :scroll-bar)
    (int :interactor))
   (:layouts
    (default (horizontally ()
-	      (1/4 room-list)
-	      (3/4 (vertically ()
-	      	     (3/4 room)
-	      	     (1/4 int)))))
+	      room-list
+	      (:fill (vertically ()
+		       (3/4 room)
+		       (1/4 int)))))
    (room-view (horizontally ()
 		(1/4 room-list)
 		(3/4 (vertically ()
@@ -55,10 +61,12 @@
    (event-view )))
 
 (defun app-main ()
-  (run-frame-top-level (make-application-frame 'matrixicl)))
+  (let ((f (make-application-frame 'matrixicl)))
+    (setf *matrixicl-class-instance* f)
+    (run-frame-top-level f)))
 
-;; (define-matrixicl-command (com-write-string :name t) ()
-;;   (write-string "test string" ))
+(defun select-file (path)
+  (setf (selected-file *matrixicl-class-instance*)  path))
 
 ;; (defmethod display-room-list-text ((frame matrixicl) stream)
 ;;   (with-end-of-line-action (stream :wrap*)
@@ -133,7 +141,8 @@
 					  'access-room
 					  :single-box t)
 	      (slim:with-table (pane)
-		(slim:row (slim:cell (bold (pane) (princ (matrix-query::name room)))))
+		(slim:row (slim:cell (bold (pane)
+				       (princ (matrix-query::name room)))))
 		(slim:row (slim:cell (princ "  ")
 				     (princ (matrix-query::topic room)))))
 	      (fresh-line))))))
@@ -151,7 +160,8 @@
     (with-output-as-presentation (pane event 'access-event :single-box t)
       (slim:with-table (pane)
 	(slim:row (slim:cell (bold (pane)
-			       (with-drawing-options (pane :ink clim:+dark-violet+)
+			       (with-drawing-options
+				   (pane :ink clim:+dark-violet+)
 				 (princ (matrix-query::sender event)))
 			       (princ " says:  "))
 			     (princ (matrix-query::generate-text event))))))))
@@ -162,7 +172,8 @@
     (with-output-as-presentation (pane event 'access-event :single-box t)
       (slim:with-table (pane)
 	(slim:row (slim:cell (bold (pane)
-			       (with-drawing-options (pane :ink clim:+dark-violet+)
+			       (with-drawing-options
+				   (pane :ink clim:+dark-violet+)
 				 (princ (matrix-query::sender event)))
 			       (princ " says:  "))
 			     (princ (matrix-query::generate-text event))))))))
@@ -173,34 +184,38 @@
     (with-output-as-presentation (pane event 'access-event :single-box t)
       (slim:with-table (pane)
 	(slim:row (slim:cell (bold (pane)
-			       (with-drawing-options (pane :ink clim:+dark-violet+)
+			       (with-drawing-options
+				   (pane :ink clim:+dark-violet+)
 				 (princ (matrix-query::creator event)))
 			       (princ " created the room"))))))))
 
 (defgeneric print-main-display (item frame pane))
 
-(defmethod print-main-display ((item matrix-query::matrix-room) (frame matrixicl) pane)
+(defmethod print-main-display ((item matrix-query::matrix-room)
+			       (frame matrixicl) pane)
   (with-end-of-page-action (pane :scroll)
     (slim:with-table (pane :x-spacing 10)
       (with-end-of-line-action (pane :wrap*)
 	(slim:with-table (pane)
-	  (slim:row (slim:cell (bold (pane)
-				 (with-drawing-options (pane :ink clim:+green4+)
-				   (with-output-as-presentation (pane
-								 item
-								 'update-with-prior-events
-								 :single-box t)
-				     (princ "Fetch 10"))
-				   (with-output-as-presentation (pane
-								 item
-								 'update-with-many-prior-events
-								 :single-box t)
-				     (princ " (or 30) "))
-				   (with-output-as-presentation (pane
-								 item
-								 'update-with-prior-events
-								 :single-box t)
-				     (princ "earlier messages")))))))
+	  (slim:row
+	    (slim:cell
+	      (bold (pane)
+		(with-drawing-options (pane :ink clim:+green4+)
+		  (with-output-as-presentation (pane
+						item
+						'update-with-prior-events
+						:single-box t)
+		    (princ "Fetch 10"))
+		  (with-output-as-presentation (pane
+						item
+						'update-with-many-prior-events
+						:single-box t)
+		    (princ " (or 30) "))
+		  (with-output-as-presentation (pane
+						item
+						'update-with-prior-events
+						:single-box t)
+		    (princ "earlier messages")))))))
 	(loop for event in (matrix-query::timeline item)
 	   do ;; (with-output-as-presentation (pane event 'pres-tester :single-box t)
 	   ;;   (slim:with-table (pane)
@@ -214,7 +229,8 @@
     ;; (format pane " ")
     ))
 
-(defmethod print-main-display ((item matrix-query::matrix-room) (frame matrixicl) pane)
+(defmethod print-main-display ((item matrix-query::matrix-room)
+			       (frame matrixicl) pane)
   ;; (princ "heyo" pane)
   (with-end-of-page-action (pane :scroll)
     (with-end-of-line-action (pane :wrap*)
@@ -233,7 +249,8 @@
 
 (defgeneric display-event-in-pane (event frame pane))
 
-(defmethod display-event-in-pane ((event matrix-query::event) (frame matrixicl) pane)
+(defmethod display-event-in-pane ((event matrix-query::event)
+				  (frame matrixicl) pane)
   (with-output-as-presentation (pane event 'access-event :single-box t)
     (bold (pane)
       (with-drawing-options (pane :ink clim:+dark-violet+)
@@ -244,7 +261,8 @@
     (princ (matrix-query::generate-text event) pane)
     (terpri pane)))
 
-(defmethod display-event-in-pane ((event matrix-query::text-message-event) (frame matrixicl) pane)
+(defmethod display-event-in-pane ((event matrix-query::text-message-event)
+				  (frame matrixicl) pane)
   (with-output-as-presentation (pane event 'access-event :single-box t)
     (bold (pane)
       (with-drawing-options (pane :ink clim:+dark-violet+)
@@ -255,7 +273,8 @@
     (princ (matrix-query::generate-text event) pane)
     (terpri pane)))
 
-(defmethod print-main-display ((item matrix-query::text-message-event) (frame matrixicl) pane)
+(defmethod print-main-display ((item matrix-query::text-message-event)
+			       (frame matrixicl) pane)
   (slim:with-table (pane :x-spacing 10)
     (with-output-as-presentation (pane (current-room *application-frame*)
 				       'room-return-presentation
@@ -263,10 +282,14 @@
       (slim:row (slim:cell (bold (pane)
 			     (with-drawing-options (pane :ink clim:+green4+)
 			       (princ "RETURN TO ROOM"))))))
-    (slim:row (slim:cell (bold (pane) (princ "Here is the content form of the selected event: "))))
+    (slim:row (slim:cell
+		(bold (pane)
+		  (princ "Here is the content form of the selected event: "))))
     (slim:row (slim:cell (princ (matrix-query::content item))))
     (fresh-line)
-    (slim:row (slim:cell (bold (pane) (princ "Here is the body data member of the event object"))))
+    (slim:row (slim:cell
+		(bold (pane)
+		  (princ "Here is the body data member of the event object"))))
     (slim:row (slim:cell (princ (matrix-query::body item))))))
 
 (defun get-slots (object)
@@ -306,7 +329,8 @@
 			     (princ (type-of object))))))
     (loop for i in (get-slots object)
        do (slim:row (slim:cell (bold (pane)
-				 (with-drawing-options (pane :ink clim:+dark-violet+)
+				 (with-drawing-options
+				     (pane :ink clim:+dark-violet+)
 				   (princ i))))
 		    (slim:cell (princ (handler-case (slot-value object i)
 					;;(unbound-slot (UNBOUND-SLOT))
@@ -325,7 +349,9 @@
     (slim:row (slim:cell (bold (pane)
 			   (format pane "~a, ~a" (matrix-query::event-type item)
 				   (type-of item)))))
-    (slim:row (slim:cell (bold (pane) (princ "Here is the content form of the selected event: "))))
+    (slim:row (slim:cell
+		(bold (pane)
+		  (princ "Here is the content form of the selected event: "))))
     (slim:row (slim:cell (princ (matrix-query::content item))))
 
     (slim:row (slim:cell (bold (pane) (princ "here is the event"))))

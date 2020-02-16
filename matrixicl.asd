@@ -1,16 +1,17 @@
 ;;;; matrix-clim-client.asd
 
-(asdf:defsystem #:matrix-clim-client
-  :description "Describe matrix-clim-client here"
+(asdf:defsystem #:matrixicl
+  :description "Describe matrixicl here"
   :author "Your Name <your.name@example.com>"
   :license  "Specify license here"
   :version "0.0.1"
   :serial t
   :depends-on (#:mcclim
 	       #:matrix-query
-	       #:slim)
+	       #:slim
+	       #:cl-fad)
   :components ((:file "package")
-               (:file "matrix-clim-client")
+               (:file "matrixicl")
 	       (:file "commands")
 	       (:file "presentations")
-	       ))
+	       (:file "file-selector")))
