@@ -1,6 +1,6 @@
 
 
-(in-package :matrix-clim-client)
+(in-package :matrixicl)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;   Presentation types   ;;;
