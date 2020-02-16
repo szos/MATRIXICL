@@ -1,5 +1,5 @@
 
-(in-package :matrix-clim-client)
+(in-package :matrixicl)
 
 (make-command-table 'matrixicl-menubar
 		    :errorp nil
@@ -10,6 +10,7 @@
 (make-command-table 'matrixicl-application-menu
 		    :errorp nil
 		    :menu '(("Manual Redisplay" :command com-manual-redisplay)
+			    ("Select File" :command com-select-file)
 			    ("Quit" :command com-quit)))
 
 (make-command-table 'matrixicl-room-menu
@@ -52,6 +53,10 @@
     ((room matrix-query::matrix-room :prompt "enter a room id"))
   (setf (scroll-to-bottom *application-frame*) nil)
   (matrix-query::get-prior-events room 30))
+
+(define-matrixicl-command (com-select-file :name t)
+    ()
+  (matrixicl.file-selector::app-main))
 
 (defparameter *clim-command-thread-lock* (bt:make-lock))
 
@@ -126,3 +131,11 @@
 	(current-room *application-frame*))
   (setf (main-display *application-frame*)
 	(current-room *application-frame*)))
+
+;;;;;;;;;;;;;;;;;;;;;
+;;; SEND MESSAGES ;;;
+;;;;;;;;;;;;;;;;;;;;;
+
+(define-matrixicl-command (com-send-text-message :name t)
+    ((message string :prompt "Enter your message: "))
+  (matrix-query::test/send-text-message))
