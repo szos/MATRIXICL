@@ -6,15 +6,19 @@
   `(with-text-face (,stream :bold)
      ,@body))
 
+(defmacro italic ((stream) &body body)
+  `(with-text-face (,stream :italic)
+     ,@body))
+
 (defparameter *selected-file* nil)
 
 (defparameter *matrixicl-class-instance* nil)
 
 (define-application-frame matrixicl ()
-  ((current-room :initform nil
+  ((current-room :initform nil ;; "No Room Selected"
 		 :initarg :current-room
 		 :accessor current-room)
-   (selected-file :initform nil
+   (selected-file :initform nil ;; "No File Selected"
 		  :initarg :selected-file
 		  :accessor selected-file)
    (main-display :initform "Nothing selected to display"
@@ -35,24 +39,48 @@
               :display-time :command-loop
 	      :width 200
 	      ;; :width* 300
-	      ;; :scroll-bars t
+	      :scroll-bars nil
+	      :background +display-background+
+	      :foreground +display-foreground+
 	      )
    (room :application
 	 :display-function #'display-chat
 	 :display-time :command-loop
-	 ;;:scroll-bars t
+	 :background +display-background+
+	 :foreground +display-foreground+
+	 :scroll-bars nil
 	 )
-   (event-viewer-pane :application
-   		      ;; :display-function #'display-event-pane
-   		      ;; :scroll-bars t
-		      )
-   (int :interactor))
+   ;; (event-viewer-pane :application
+   ;; 		      ;; :display-function #'display-event-pane
+   ;; 		      ;; :scroll-bars t
+   ;; 		      )
+   (int :interactor
+	:background +display-background+
+	:foreground +display-foreground+)
+   (info :application
+	 :display-function #'display-info-pane
+	 :incremental-redisplay t
+	 :height 20
+	 :scroll-bar nil
+	 :background +info-background+
+	 :foreground +info-foreground+))
   (:layouts
-   (default (horizontally ()
-	      room-list
-	      (:fill (vertically ()
-		       (3/4 room)
-		       (1/4 int)))))
+   (default
+    (vertically ()
+      ;; (20 info)
+      info 
+      (:fill
+       (horizontally ()
+	 room-list
+	 ;; (scrolling (:scroll-bars t)
+	 ;;   room-list)
+         (make-pane 'clim-extensions:box-adjuster-gadget
+		    :background +display-background+
+		    :foreground +display-foreground+)
+	 (:fill (vertically ()
+		  (:fill room)
+		  (make-pane 'clim-extensions:box-adjuster-gadget)
+		  (1/4 int)))))))
    (room-view (horizontally ()
 		(1/4 room-list)
 		(3/4 (vertically ()
@@ -61,12 +89,39 @@
    (event-view )))
 
 (defun app-main ()
+  (handler-case (load "~/.matrixicl.d/init.lisp")
+    (sb-int:simple-file-error () nil))
   (let ((f (make-application-frame 'matrixicl)))
     (setf *matrixicl-class-instance* f)
     (run-frame-top-level f)))
 
+(defmethod display-info-pane ((frame matrixicl) pane)
+  (multiple-value-bind (seconds minutes hours)
+      (decode-universal-time (get-universal-time))
+    seconds
+    (with-text-family (pane :serif)
+      (format pane "~:[~;~2,'0D:~2,'0D    ~]";~A~:[~;(away)~] ~@[on ~A~]~@[ speaking to ~A~]~100T~D messages"
+	      (clim-internals::processp (clim-internals::current-process))
+	      ;; don't display time if threads are not supported
+              hours minutes
+	      )))
+  (bold (pane)
+    (princ "Current Room: " pane))
+  (italic (pane)
+    (princ (if (equal (type-of  (current-room *application-frame*))
+		      'matrix-query::matrix-room)
+	       (matrix-query::name (current-room *application-frame*))
+	       (or (current-room *application-frame*) "No Current Room"))
+	   pane))
+  (bold (pane)
+    (princ "    Selected File: " pane))
+  (italic (pane)
+    (princ (or (selected-file *application-frame*) "No Selected File") pane)))
+
 (defun select-file (path)
-  (setf (selected-file *matrixicl-class-instance*)  path))
+  (setf (selected-file *matrixicl-class-instance* ;;*application-frame* ;; 
+		       )
+	path))
 
 ;; (defmethod display-room-list-text ((frame matrixicl) stream)
 ;;   (with-end-of-line-action (stream :wrap*)
@@ -364,6 +419,8 @@
     (slim:row (slim:cell (bold (pane) (princ item))))))
 
 (defmethod display-chat ((frame matrixicl) pane)
+  (with-end-of-line-action (pane :wrap*)
+    (format pane "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))
   (with-end-of-page-action (pane :scroll)
     (let ((item (main-display frame)))
       (print-main-display item frame pane)
