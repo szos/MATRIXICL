@@ -3,11 +3,11 @@
   1. to learn the clim protocol
   2. to create a GUI for :matrix-query
 * Usage
-  This app depends on another system im writing called matrix-query, which does the heavy lifting of talking to the matrix homeserver. Once both :matrix-query and :matrix-clim-client are in a place where quicklisp can find them, open up a repl and run
+  Clone this repository as well as =github.com/szos/matrix-query= to a location where quicklisp can see them. Once both ~:matrix-query~ and ~:matrixicl~ are in a place where quicklisp can find them, open up a repl and run
 
   #+begin_src common-lisp
-  (ql:quickload :matrix-clim-client)
-  (matrix-clim-client:app-main)
+  (ql:quickload :matrixicl)
+  (matrixicl:app-main)
   #+end_src
 
   It is advisable to run this from emacs+slime, as the program is error prone at this point in time, and this will allow you to tackle errors much easier. 
