@@ -58,6 +58,26 @@
     ()
   (matrixicl.file-selector::app-main))
 
+(define-matrixicl-command (com-send-text-message :name "Testing Send Text Message")
+    ((message string :prompt "Compose Message"))
+  (matrix-query::test/send-text-message (current-room *application-frame*)
+					message))
+
+(define-condition no-current-room-error (error)
+  ())
+
+(define-matrixicl-command (com-send-file :name "testing send file")
+    ()
+  (unless (equal (type-of (current-room *application-frame*))
+		 'matrix-query::matrix-room)
+    (error 'no-current-room-error))
+  (unless (selected-file *application-frame*)
+    (com-select-file))
+  (matrix-query::test/send-file
+   (matrix-query::room-id ;; (current-room *application-frame*)
+			  )
+   (selected-file *application-frame*)))
+
 (defparameter *clim-command-thread-lock* (bt:make-lock))
 
 (defun threaded-login (un pw)
