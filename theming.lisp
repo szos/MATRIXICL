@@ -52,10 +52,6 @@
 	  `(defparameter ,name real-color)
 	  'real-color)))
 
-;; (defcolor nil (:ihs 1.2 (/ 1 3) 0.247))
-
-;; (defcolor nil clim:+white+)
-
 (defcolor +display-background+ clim:+white+)
 (defcolor +display-foreground+ clim:+black+)
 
@@ -81,7 +77,7 @@
 
 (deftheme :light
   (+display-background+ clim:+white+)
-  (+display-foreground+ (defcolor-testing nil (:ihs 1.2 (/ 1 3) 0.247)))
+  (+display-foreground+ +black+)
   (+info-background+ +black+)
   (+info-foreground+ +white+))
 
