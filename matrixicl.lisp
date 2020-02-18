@@ -61,6 +61,7 @@
 	 :display-function #'display-info-pane
 	 :incremental-redisplay t
 	 :height 20
+	 :width 2096
 	 :scroll-bar nil
 	 :background +info-background+
 	 :foreground +info-foreground+))
@@ -419,8 +420,8 @@
     (slim:row (slim:cell (bold (pane) (princ item))))))
 
 (defmethod display-chat ((frame matrixicl) pane)
-  (with-end-of-line-action (pane :wrap*)
-    (format pane "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))
+  ;; (with-end-of-line-action (pane :wrap*)
+  ;;   (format pane "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))
   (with-end-of-page-action (pane :scroll)
     (let ((item (main-display frame)))
       (print-main-display item frame pane)
