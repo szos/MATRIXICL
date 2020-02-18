@@ -13,4 +13,5 @@
   It is advisable to run this from emacs+slime, as the program is error prone at this point in time, and this will allow you to tackle errors much easier. 
 
   Once the frame is opened, you can login via the interactor or the menubar. after logging in the program will populate with the rooms you have joined. It does not currently populate banned or invited rooms. you can click on a room to view it, and you can click on an event within the room to inspect it. 
-
+** Customization
+   Matrixicl will look for an init file at =~/.matrixicl.d/init.lisp=. This file should begin with ~(in-package :matrixicl)~. Here you can define themes, set-themes, and in general customize the application. 
