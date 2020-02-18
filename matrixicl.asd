@@ -11,7 +11,8 @@
 	       #:slim
 	       #:cl-fad)
   :components ((:file "package")
+	       (:file "theming")
                (:file "matrixicl")
+	       (:file "file-selector")
 	       (:file "commands")
-	       (:file "presentations")
-	       (:file "file-selector")))
+	       (:file "presentations")))
