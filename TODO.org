@@ -1,0 +1,4 @@
+#+title: TODO list
+
+* Fix defcolor
+  ~defcolor~ wont work with additional arguments without eval. This seems to be a bug, as it passes these to a function which should evaluate its arguments. Or I am misunderstanding how macros work. Its probably that. So currently ~defcolor~ uses eval on every one of its arguments, which means that its innefficent and potentially dangerous - users distributing themes can do something place something like ~(defcolor nil (:rgb 1 1 (progn (launch-nukes) 1)))~ in the theme definition.
