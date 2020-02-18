@@ -10,18 +10,24 @@
 			  `(progn
 			     ,(cond ((eq (car color) :ihs)
 				     `(apply 'make-ihs-color
-					     (second ',color)
-					     (third ',color)
-					     (fourth ',color)))
+					     (cdr ',color)
+					     ;; (second ',color)
+					     ;; (third ',color)
+					     ;; (fourth ',color)
+					     ))
 				    ((eq (car color) :rgb)
 				     `(apply 'make-rgb-color
-					     (second ',color)
-					     (third ',color)
-					     (fourth ',color)))
+                                             (cdr ',color)
+					     ;; (second ',color)
+					     ;; (third ',color)
+					     ;; (fourth ',color)
+					     ))
 				    ((or (eq (car color) :grey)
 					 (eq (car color) :gray))
 				     `(apply 'make-gray-color
-					     (second ',color))))))))
+					     (cdr ',color)
+					     ;; (second ',color)
+					     )))))))
      ,(if name
 	  `(defparameter ,name real-color)
 	  'real-color)))
@@ -45,6 +51,8 @@
      ,(if name
 	  `(defparameter ,name real-color)
 	  'real-color)))
+
+;; (defcolor nil (:ihs 1.2 (/ 1 3) 0.247))
 
 ;; (defcolor nil clim:+white+)
 
@@ -73,7 +81,7 @@
 
 (deftheme :light
   (+display-background+ clim:+white+)
-  (+display-foreground+ (defcolor nil (:ihs 1.2 (/ 1 3) 0.247)))
+  (+display-foreground+ (defcolor-testing nil (:ihs 1.2 (/ 1 3) 0.247)))
   (+info-background+ +black+)
   (+info-foreground+ +white+))
 
