@@ -39,7 +39,7 @@
               :display-time :command-loop
 	      :width 200
 	      ;; :width* 300
-	      :scroll-bars nil
+	      ;; :scroll-bars nil
 	      :background +display-background+
 	      :foreground +display-foreground+
 	      )
@@ -48,7 +48,7 @@
 	 :display-time :command-loop
 	 :background +display-background+
 	 :foreground +display-foreground+
-	 :scroll-bars nil
+	 ;; :scroll-bars nil
 	 )
    ;; (event-viewer-pane :application
    ;; 		      ;; :display-function #'display-event-pane
@@ -79,7 +79,9 @@
 		    :background +display-background+
 		    :foreground +display-foreground+)
 	 (:fill (vertically ()
-		  (:fill room)
+		  (:fill (scrolling (:scroll-bars :horizontal) room)
+			 ;;room
+			 )
 		  (make-pane 'clim-extensions:box-adjuster-gadget)
 		  (1/4 int)))))))
    (room-view (horizontally ()
@@ -92,6 +94,11 @@
 (defun app-main ()
   (handler-case (load "~/.matrixicl.d/init.lisp")
     (sb-int:simple-file-error () nil))
+  (let ((f (make-application-frame 'matrixicl)))
+    (setf *matrixicl-class-instance* f)
+    (run-frame-top-level f)))
+
+(defun app-main-no-init ()
   (let ((f (make-application-frame 'matrixicl)))
     (setf *matrixicl-class-instance* f)
     (run-frame-top-level f)))
@@ -217,7 +224,7 @@
       (slim:with-table (pane)
 	(slim:row (slim:cell (bold (pane)
 			       (with-drawing-options
-				   (pane :ink clim:+dark-violet+)
+				   (pane :ink +sender-foreground+)
 				 (princ (matrix-query::sender event)))
 			       (princ " says:  "))
 			     (princ (matrix-query::generate-text event))))))))
@@ -229,7 +236,7 @@
       (slim:with-table (pane)
 	(slim:row (slim:cell (bold (pane)
 			       (with-drawing-options
-				   (pane :ink clim:+dark-violet+)
+				   (pane :ink +sender-foreground+)
 				 (princ (matrix-query::sender event)))
 			       (princ " says:  "))
 			     (princ (matrix-query::generate-text event))))))))
@@ -241,7 +248,7 @@
       (slim:with-table (pane)
 	(slim:row (slim:cell (bold (pane)
 			       (with-drawing-options
-				   (pane :ink clim:+dark-violet+)
+				   (pane :ink +sender-foreground+)
 				 (princ (matrix-query::creator event)))
 			       (princ " created the room"))))))))
 
@@ -309,7 +316,7 @@
 				  (frame matrixicl) pane)
   (with-output-as-presentation (pane event 'access-event :single-box t)
     (bold (pane)
-      (with-drawing-options (pane :ink clim:+dark-violet+)
+      (with-drawing-options (pane :ink +sender-foreground+)
 	(princ (matrix-query::sender event) pane))
       (princ " says: " pane))
     (terpri pane)
@@ -321,12 +328,13 @@
 				  (frame matrixicl) pane)
   (with-output-as-presentation (pane event 'access-event :single-box t)
     (bold (pane)
-      (with-drawing-options (pane :ink clim:+dark-violet+)
+      (with-drawing-options (pane :ink +sender-foreground+)
 	(princ (matrix-query::sender event) pane))
       (princ " says: " pane))
     (terpri pane)
     (princ "    " pane)
-    (princ (matrix-query::generate-text event) pane)
+    (with-drawing-options (pane :ink +message-contents+)
+      (princ (matrix-query::generate-text event) pane))
     (terpri pane)))
 
 (defmethod print-main-display ((item matrix-query::text-message-event)
@@ -422,15 +430,20 @@
 (defmethod display-chat ((frame matrixicl) pane)
   ;; (with-end-of-line-action (pane :wrap*)
   ;;   (format pane "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))
-  (with-end-of-page-action (pane :scroll)
+  (with-pane-kept-scrolled-to-bottom (pane)
     (let ((item (main-display frame)))
-      (print-main-display item frame pane)
-      ;; (fresh-line)
-      ;; we need this line to ensure that we scroll to the bottom of the pane
-      ;; (when (scroll-to-bottom *application-frame*)
-      ;; 	(formaT pane " "))
-      ;; TODO: figure out how to control scroll position.
-      )))
+      (print-main-display item frame pane)))
+  ;; (with-end-of-page-action (pane :scroll)
+  ;;   (let ((item (main-display frame)))
+  ;;     (print-main-display item frame pane)
+  ;;     (format pane " ")
+  ;;     ;; (fresh-line)
+  ;;     ;; we need this line to ensure that we scroll to the bottom of the pane
+  ;;     ;; (when (scroll-to-bottom *application-frame*)
+  ;;     ;; 	(formaT pane " "))
+  ;;     ;; TODO: figure out how to control scroll position.
+  ;;     ))
+  )
 
 ;; (defmethod display-chat ((frame matrixicl) pane)
 ;;   (with-end-of-page-action (pane :scroll)
