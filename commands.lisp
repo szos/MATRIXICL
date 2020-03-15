@@ -32,6 +32,14 @@
 (define-matrixicl-command (com-exit :name t) ()
   (frame-exit *application-frame*))
 
+(defun restart-app ()
+  (frame-exit *application-frame*)
+  (sleep 1)
+  (app-main))
+
+(define-matrixicl-command (com-restart :name t) ()
+  (restart-app))
+
 (define-matrixicl-command (com-manual-redisplay :name t) ()
   (redisplay-frame-panes *application-frame*))
 
@@ -43,6 +51,11 @@
   (matrix-query::initial-sync-threaded)
   ;; (matrix-query::setup-rooms-from-state)
   )
+
+(define-matrixicl-command (com-testing-resync :name t)
+    ()
+  (matrix-query::threaded-interface
+   (matrix-query::initial-sync)))
 
 (define-matrixicl-command (com-get-prior-events :name t)
     ((room matrix-query::matrix-room :prompt "enter a room id"))
@@ -77,6 +90,11 @@
    (matrix-query::room-id ;; (current-room *application-frame*)
 			  )
    (selected-file *application-frame*)))
+
+;; (define-matrixicl-command (com-set-theme :name "Set Theme")
+;; this doesnt work - it requrires an application restart
+;;     ((theme keyword :prompt "Theme: "))
+;;   (set-theme theme))
 
 (defparameter *clim-command-thread-lock* (bt:make-lock))
 
@@ -158,4 +176,6 @@
 
 (define-matrixicl-command (com-send-text-message :name t)
     ((message string :prompt "Enter your message: "))
-  (matrix-query::test/send-text-message))
+  (matrix-query::test/send-text-message
+   (current-room *application-frame*)
+   message))
